@@ -1,5 +1,7 @@
 import { Client, GatewayIntentBits, Events } from "discord.js"
 import dotenv from "dotenv"
+import { keepAlive } from './keep_alive.js';
+keepAlive();
 
 // Load environment variables
 dotenv.config()
