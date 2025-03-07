@@ -1,7 +1,7 @@
 {
   "name": "discord-deaf-detection-bot",
   "version": "1.0.0",
-  "description": "A Discord bot that detects when users deafen themselves and moves them to a specific channel",
+  "description": "A Discord bot that detects when users deafen themselves and moves them to a specific channel, DEVELOPED BY TANITOP1",
   "main": "index.js",
   "type": "module",
   "scripts": {
