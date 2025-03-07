@@ -37,14 +37,14 @@ client.once(Events.ClientReady, (readyClient) => {
 
 // Command to set the deafened channel
 client.on('messageCreate', async (message) => {
-  if (message.content.startsWith('!setDeafenedChannel')) {
+  if (message.content.startsWith('!setcanalafk')) {
     if (!message.member.permissions.has('ADMINISTRATOR')) {
-      return message.reply('You do not have permission to use this command.');
+      return message.reply('No tenes permisos para usar este comando.');
     }
 
     const channelId = message.content.split(' ')[1];
     if (!channelId) {
-      return message.reply('Please provide a valid channel ID.');
+      return message.reply('Poné una ID valida.');
     }
 
     if (!serverConfigs[message.guild.id]) {
@@ -52,27 +52,9 @@ client.on('messageCreate', async (message) => {
     }
     serverConfigs[message.guild.id].deafenedChannelId = channelId;
     saveConfig();
-    message.reply(`Deafened channel set to <#${channelId}>`);
+    message.reply(`Canal AFK seteado en <#${channelId}>`);
   }
-
-  if (message.content.startsWith('!setNotificationChannel')) {
-    if (!message.member.permissions.has('ADMINISTRATOR')) {
-      return message.reply('You do not have permission to use this command.');
-    }
-
-    const channelId = message.content.split(' ')[1];
-    if (!channelId) {
-      return message.reply('Please provide a valid channel ID.');
-    }
-
-    if (!serverConfigs[message.guild.id]) {
-      serverConfigs[message.guild.id] = {};
-    }
-    serverConfigs[message.guild.id].notificationChannelId = channelId;
-    saveConfig();
-    message.reply(`Notification channel set to <#${channelId}>`);
-  }
-});
+  });
 
 // Voice state update event handler
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
@@ -92,30 +74,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       // Move the user to the deafened channel
       await newState.member.voice.setChannel(serverConfig.deafenedChannelId);
       console.log(`Moved ${newState.member.user.tag} to the deafened channel.`);
-
-      // Update the deafening count and timestamp
-      const currentTime = Date.now();
-      const userDeafeningData = userDeafeningCounts.get(userId) || { count: 0, timestamp: currentTime };
-      if (currentTime - userDeafeningData.timestamp > 10000) {
-        userDeafeningData.count = 0;
-      }
-      userDeafeningData.count += 1;
-      userDeafeningData.timestamp = currentTime;
-      userDeafeningCounts.set(userId, userDeafeningData);
-
-      // Check if the user has exceeded the limit
-      if (userDeafeningData.count > 5) {
-        console.log(`User ${newState.member.user.tag} has exceeded the deafening limit.`);
-
-        // Send a message to the notification channel
-        const notificationChannelId = serverConfig.notificationChannelId;
-        if (notificationChannelId) {
-          const notificationChannel = newState.guild.channels.cache.get(notificationChannelId);
-          if (notificationChannel && notificationChannel.type === 'GUILD_TEXT') {
-            notificationChannel.send(`User ${newState.member.user.tag} has exceeded the deafening limit.`);
-          }
-        }
-      }
+  
     } catch (error) {
       console.error("Error moving user:", error);
     }
