@@ -17,6 +17,9 @@ const client = new Client({
 // Store the original channels of users
 const userOriginalChannels = new Map();
 
+// Store the deafening counts and timestamps
+const userDeafeningCounts = new Map();
+
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,7 +57,57 @@ client.on('messageCreate', async (message) => {
     saveConfig();
     message.reply(`Canal AFK seteado en <#${channelId}>`);
   }
-  });
+
+  if (message.content.startsWith('!setNotificationChannel')) {
+    if (!message.member.permissions.has('ADMINISTRATOR')) {
+      return message.reply('No tenes permisos para usar este comando.');
+    }
+
+    const channelId = message.content.split(' ')[1];
+    if (!channelId) {
+      return message.reply('Poné una ID valida.');
+    }
+
+    if (!serverConfigs[message.guild.id]) {
+      serverConfigs[message.guild.id] = {};
+    }
+    serverConfigs[message.guild.id].notificationChannelId = channelId;
+    saveConfig();
+    message.reply(`Canal de notificaciones seteado en <#${channelId}>`);
+  }
+
+  if (message.content.startsWith('!vincularusuario')) {
+    if (!message.member.permissions.has('ADMINISTRATOR')) {
+      return message.reply('No tenes permisos para usar este comando.');
+    }
+
+    const userId = message.content.split(' ')[1];
+    if (!userId) {
+      return message.reply('Poné una ID valida.');
+    }
+
+    if (!serverConfigs[message.guild.id]) {
+      serverConfigs[message.guild.id] = {};
+    }
+    serverConfigs[message.guild.id].userToDisconnect = userId;
+    saveConfig();
+    message.reply(`Usuario a desconectar seteado con ID ${userId}`);
+  }
+
+  if (message.content.startsWith('!desvincularusuario')) {
+    if (!message.member.permissions.has('ADMINISTRATOR')) {
+      return message.reply('No tenes permisos para usar este comando.');
+    }
+
+    if (!serverConfigs[message.guild.id] || !serverConfigs[message.guild.id].userToDisconnect) {
+      return message.reply('No hay ningún usuario configurado para desconectar.');
+    }
+
+    delete serverConfigs[message.guild.id].userToDisconnect;
+    saveConfig();
+    message.reply('Usuario a desconectar desconfigurado.');
+  }
+});
 
 // Voice state update event handler
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
@@ -74,7 +127,34 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       // Move the user to the deafened channel
       await newState.member.voice.setChannel(serverConfig.deafenedChannelId);
       console.log(`Moved ${newState.member.user.tag} to the deafened channel.`);
-  
+
+      // Update the deafening count and timestamp
+      const currentTime = Date.now();
+      const userDeafeningData = userDeafeningCounts.get(userId) || { count: 0, timestamp: currentTime };
+      if (currentTime - userDeafeningData.timestamp > 10000) {
+        userDeafeningData.count = 0;
+      }
+      userDeafeningData.count += 1;
+      userDeafeningData.timestamp = currentTime;
+      userDeafeningCounts.set(userId, userDeafeningData);
+
+      // Check if the user has exceeded the limit
+      if (userDeafeningData.count > 5) {
+        console.log(`User ${newState.member.user.tag} has exceeded the deafening limit.`);
+        
+        // Send a message to the notification channel
+        const notificationChannelId = serverConfig.notificationChannelId;
+        if (notificationChannelId) {
+          const notificationChannel = newState.guild.channels.cache.get(notificationChannelId);
+          if (notificationChannel && notificationChannel.isText()) {
+            notificationChannel.send(`User ${newState.member.user.tag} has exceeded the deafening limit.`);
+          } else {
+            console.error(`Notification channel with ID ${notificationChannelId} is not a text channel.`);
+          }
+        } else {
+          console.error(`Notification channel ID is not set for guild ${newState.guild.id}.`);
+        }
+      }
     } catch (error) {
       console.error("Error moving user:", error);
     }
@@ -96,6 +176,20 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       }
     } catch (error) {
       console.error("Error moving user back to original channel:", error);
+    }
+  }
+
+  // Check if the user started sharing their screen
+  if (!oldState.streaming && newState.streaming) {
+    const userToDisconnect = serverConfig.userToDisconnect;
+    if (userToDisconnect && newState.id === userToDisconnect) {
+      console.log(`User ${newState.member.user.tag} started sharing their screen. Disconnecting...`);
+      try {
+        await newState.disconnect();
+        console.log(`Disconnected ${newState.member.user.tag} for sharing their screen.`);
+      } catch (error) {
+        console.error("Error disconnecting user:", error);
+      }
     }
   }
 });
