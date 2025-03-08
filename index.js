@@ -4,15 +4,15 @@ import { keepAlive } from './keep_alive.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-keepAlive();
+import { Client, GatewayIntentBits } from "discord.js"; 
 
-// Load environment variables
-dotenv.config();
-
-// Create a new client instance
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
+
+client.login(process.env.TOKEN)
+    .then(() => console.log("🤖 Bot conectado!"))
+    .catch(err => console.error("❌ Error al conectar el bot:", err));
 
 // Store the original channels of users
 const userOriginalChannels = new Map();
