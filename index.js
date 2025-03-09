@@ -38,8 +38,6 @@ client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
-// ...existing code...
-
 // Command to set the user to disconnect when speaking
 client.on('messageCreate', async (message) => {
   if (message.content.startsWith('!setcanalafk')) {
@@ -110,7 +108,7 @@ client.on('messageCreate', async (message) => {
     message.reply('Usuario a desconectar desconfigurado.');
   }
 
-  if (message.content.startsWith('!usuarioadesconectar')) {
+  if (message.content.startsWith('!Usuarioadesconectar')) {
     if (!message.member.permissions.has('ADMINISTRATOR')) {
       return message.reply('No tenes permisos para usar este comando.');
     }
@@ -128,7 +126,7 @@ client.on('messageCreate', async (message) => {
     message.reply(`Usuario a desconectar al hablar seteado con ID ${userId}`);
   }
 
-  if (message.content.startsWith('!nodesconectarusuario')) {
+  if (message.content.startsWith('!desconfigurarusuario')) {
     if (!message.member.permissions.has('ADMINISTRATOR')) {
       return message.reply('No tenes permisos para usar este comando.');
     }
@@ -146,7 +144,7 @@ client.on('messageCreate', async (message) => {
 // Voice state update event handler
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   const serverConfig = serverConfigs[newState.guild.id];
-  if (!serverConfig || !serverConfig.deafenedChannelId) return;
+  if (!serverConfig) return;
 
   const userId = newState.id;
 
