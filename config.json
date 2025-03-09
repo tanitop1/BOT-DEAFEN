@@ -1,6 +1,6 @@
 {
     "servers": {
-      "server_id_1": {
+    "server_id_1": {
         "deafenedChannelId": "channel_id_1",
         "notificationChannelId": "channel_id_2",
         "userToDisconnect": "user_id_1",
@@ -13,4 +13,4 @@
         "userToDisconnectOnSpeak": "user_id_4"
       }
     }
-  }
+ }
