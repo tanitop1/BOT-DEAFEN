@@ -38,7 +38,9 @@ client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
-// Command to set the deafened channel
+// ...existing code...
+
+// Command to set the user to disconnect when speaking
 client.on('messageCreate', async (message) => {
   if (message.content.startsWith('!setcanalafk')) {
     if (!message.member.permissions.has('ADMINISTRATOR')) {
@@ -106,6 +108,38 @@ client.on('messageCreate', async (message) => {
     delete serverConfigs[message.guild.id].userToDisconnect;
     saveConfig();
     message.reply('Usuario a desconectar desconfigurado.');
+  }
+
+  if (message.content.startsWith('!usuarioadesconectar')) {
+    if (!message.member.permissions.has('ADMINISTRATOR')) {
+      return message.reply('No tenes permisos para usar este comando.');
+    }
+
+    const userId = message.content.split(' ')[1];
+    if (!userId) {
+      return message.reply('Poné una ID valida.');
+    }
+
+    if (!serverConfigs[message.guild.id]) {
+      serverConfigs[message.guild.id] = {};
+    }
+    serverConfigs[message.guild.id].userToDisconnectOnSpeak = userId;
+    saveConfig();
+    message.reply(`Usuario a desconectar al hablar seteado con ID ${userId}`);
+  }
+
+  if (message.content.startsWith('!nodesconectarusuario')) {
+    if (!message.member.permissions.has('ADMINISTRATOR')) {
+      return message.reply('No tenes permisos para usar este comando.');
+    }
+
+    if (!serverConfigs[message.guild.id] || !serverConfigs[message.guild.id].userToDisconnectOnSpeak) {
+      return message.reply('No hay ningún usuario configurado para desconectar al hablar.');
+    }
+
+    delete serverConfigs[message.guild.id].userToDisconnectOnSpeak;
+    saveConfig();
+    message.reply('Usuario a desconectar al hablar desconfigurado.');
   }
 });
 
@@ -187,6 +221,20 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       try {
         await newState.disconnect();
         console.log(`Disconnected ${newState.member.user.tag} for sharing their screen.`);
+      } catch (error) {
+        console.error("Error disconnecting user:", error);
+      }
+    }
+  }
+
+  // Check if the user started speaking
+  if (!oldState.speaking && newState.speaking) {
+    const userToDisconnectOnSpeak = serverConfig.userToDisconnectOnSpeak;
+    if (userToDisconnectOnSpeak && newState.id === userToDisconnectOnSpeak) {
+      console.log(`User ${newState.member.user.tag} started speaking. Disconnecting...`);
+      try {
+        await newState.disconnect();
+        console.log(`Disconnected ${newState.member.user.tag} for speaking.`);
       } catch (error) {
         console.error("Error disconnecting user:", error);
       }
